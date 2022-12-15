@@ -1,9 +1,6 @@
-import { HttpRequest, EmailValidator } from '../protocols'
+import { HttpRequest, AddAccout, EmailValidator, AddAccountModel, AccountModel } from './signup-protocols'
+import { MissingParamError, InvalidParamError, ServerError } from '../../errors'
 import { SignUpController } from './signup'
-import { MissingParamError, InvalidParamError, ServerError } from '../errors'
-import { AddAccountModel, AddAccout } from '../../domain/usecases/add-account'
-import { AccountModel } from '../../domain/mdoels/account'
-
 
 const makeEmailValidator = (): EmailValidator => {
   class EmailValidatorSub implements EmailValidator {
