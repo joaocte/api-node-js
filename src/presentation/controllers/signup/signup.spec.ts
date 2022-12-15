@@ -1,4 +1,4 @@
-import { HttpRequest, AddAccout, EmailValidator, AddAccountModel, AccountModel } from './signup-protocols'
+import { HttpRequest, AddAccount, EmailValidator, AddAccountModel, AccountModel } from './signup-protocols'
 import { MissingParamError, InvalidParamError, ServerError } from '../../errors'
 import { SignUpController } from './signup'
 
@@ -10,8 +10,8 @@ const makeEmailValidator = (): EmailValidator => {
   }
   return new EmailValidatorSub()
 }
-const makeAddAccount = (): AddAccout => {
-  class AddAccoutSub implements AddAccout {
+const makeAddAccount = (): AddAccount => {
+  class AddAccountStub implements AddAccount {
     add (account: AddAccountModel): AccountModel {
       const fakeAccount = {
         id: 'valid_id',
@@ -22,13 +22,13 @@ const makeAddAccount = (): AddAccout => {
       return fakeAccount
     }
   }
-  return new AddAccoutSub()
+  return new AddAccountStub()
 }
 
 interface SutTypes {
   sut: SignUpController
   emailValidatorStub: EmailValidator
-  addAccountStub: AddAccout
+  addAccountStub: AddAccount
 }
 
 const makeSut = (): SutTypes => {
@@ -53,9 +53,9 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(400)
-    expect(httpRespose.body).toEqual(new MissingParamError('name'))
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new MissingParamError('name'))
   })
   test('Should return 400 if no email is provided', () => {
     const { sut } = makeSut()
@@ -66,9 +66,9 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(400)
-    expect(httpRespose.body).toEqual(new MissingParamError('email'))
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new MissingParamError('email'))
   })
   test('Should return 400 if no password is provided', () => {
     const { sut } = makeSut()
@@ -79,9 +79,9 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(400)
-    expect(httpRespose.body).toEqual(new MissingParamError('password'))
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
   test('Should return 400 if no passwordConfirmation is provided', () => {
     const { sut } = makeSut()
@@ -92,9 +92,9 @@ describe('Signup Controller', () => {
         password: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(400)
-    expect(httpRespose.body).toEqual(new MissingParamError('passwordConfirmation'))
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new MissingParamError('passwordConfirmation'))
   })
   test('Should return 400 if password confirmation fails', () => {
     const { sut } = makeSut()
@@ -106,9 +106,9 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'invalid_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(400)
-    expect(httpRespose.body).toEqual(new InvalidParamError('passwordConfirmation'))
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('passwordConfirmation'))
   })
   test('Should return 400 if an invalid email is provided', () => {
     const { sut, emailValidatorStub } = makeSut()
@@ -121,9 +121,9 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(400)
-    expect(httpRespose.body).toEqual(new InvalidParamError('email'))
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
   })
   test('Should call EmailValidator with correct email', () => {
     const { sut, emailValidatorStub } = makeSut()
@@ -154,9 +154,9 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(500)
-    expect(httpRespose.body).toEqual(new ServerError())
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 
   test('Should call AddAccount with correct values', () => {
@@ -194,8 +194,28 @@ describe('Signup Controller', () => {
         passwordConfirmation: 'any_password'
       }
     }
-    const httpRespose = sut.handle(httpRequest)
-    expect(httpRespose.statusCode).toBe(500)
-    expect(httpRespose.body).toEqual(new ServerError())
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
+  })
+
+  test('Should return 200 if valid data is provided', () => {
+    const { sut } = makeSut()
+    const httpRequest: HttpRequest = {
+      body: {
+        name: 'any_name',
+        email: 'invalid_email@mail.com',
+        password: 'any_password',
+        passwordConfirmation: 'any_password'
+      }
+    }
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(200)
+    expect(httpResponse.body).toEqual({
+      id: 'valid_id',
+      name: 'valid_name',
+      email: 'valid_email@mail.com',
+      password: 'valid_password'
+    })
   })
 })
